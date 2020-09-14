@@ -14,10 +14,12 @@ namespace Pomodoro.Controllers
     {
         private readonly IPomodoroService _pomodoroService;
         private readonly IMapper _mapper;
-        public PomodorosController(IPomodoroService pomodoroService, IMapper mapper)
+        private readonly IUserService _userService;
+        public PomodorosController(IPomodoroService pomodoroService, IMapper mapper, IUserService userService)
         {
             _pomodoroService = pomodoroService;
             _mapper = mapper;
+            _userService = userService;
         }
 
         [Route("[action]")]
@@ -53,7 +55,6 @@ namespace Pomodoro.Controllers
             return Ok();
         }
 
-        [Route("[action]")]
         [HttpGet("GetUserHistory/{id}")]
         public ActionResult<List<PomodoroDto>> GetUserHistory(int id)
         {
@@ -61,7 +62,6 @@ namespace Pomodoro.Controllers
             return new JsonResult(pomodoros);
         }
 
-        [Route("[action]")]
         [HttpGet("GetPomodoroType/{id}")]
         public ActionResult<IEnumerable<PomodoroTypeDto>> GetUserPomodorType(int id)
         {
@@ -83,6 +83,14 @@ namespace Pomodoro.Controllers
         {
             var newSettings = await _pomodoroService.UpdateSettings(_mapper.Map<PomodoroSettings>(settings));
             return new JsonResult(newSettings);
+        }
+
+
+        [HttpGet("GetUserStatistics/{id}/{range}")]
+        public ActionResult<UserStatisticsDto> GetUserStatistics(int id, int range)
+        {
+            var statistics = _userService.GetUserStatistics(id, range);
+            return new JsonResult(statistics);
         }
     }
 }

@@ -34,12 +34,5 @@ namespace Pomodoro.Controllers
 
             return new JsonResult(user);
         }
-
-        [HttpGet("GetUserStatistics/{id}/{range}")]
-        public ActionResult<UserStatisticsDto> GetUserStatistics(int id, int range)
-        {
-            var statistics = _userService.GetUserStatistics(id, range);
-            return new JsonResult(statistics);
-        }
     }
 }

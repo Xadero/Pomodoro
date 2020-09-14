@@ -27,7 +27,7 @@
     };
 
     self.GetUserStatistics = function (userId, range) {
-        $.getJSON('https://localhost:5001/Users/GetUserStatistics/' + userId + '/' + range, function (data) {
+        $.getJSON('https://localhost:5001/Pomodoros/GetUserStatistics/' + userId + '/' + range, function (data) {
             $("#total").text(data.total);
             $("#completed").text(data.completed);
             $("#canceled").text(data.canceled);
