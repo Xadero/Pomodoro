@@ -1,0 +1,9 @@
+Pomodoro.DAL/bin/
+Pomodoro.DAL/obj/
+Pomodoro.Service/bin/
+Pomodoro.Service/obj/
+Pomodoro.UI/bin/
+Pomodoro.UI/obj/
+Pomodoro/bin/
+Pomodoro/obj/
+.vs/

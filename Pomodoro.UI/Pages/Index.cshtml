@@ -1,0 +1,190 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<script src="~/js/Pomodoro.js"></script>
+<script src="~/lib/jquery/dist/jquery.js"></script>
+
+<h1>Pomodoro Timer</h1>
+<div>
+    <input type="button" class="btn btn-primary" id="showSettings" value="Settings" />
+    <div class="modal fade" id="settingsModal" role="dialog" data-url='@Url.Action("ShowSettings", "Home")'></div>
+
+    <input type="button" class="btn btn-primary" id="showHistory" value="History" />
+    <div class="modal fade" id="historyModal" role="dialog" data-url='@Url.Action("ShowHistory", "Home")'></div>
+
+    <input type="button" class="btn btn-primary" id="showStatistics" value="Statistics" />
+    <div class="modal fade" id="statisticsModal" role="dialog" data-url='@Url.Action("ShowStatistics", "Home")'></div>
+</div>
+<div id="container">
+    <p id="work" class="label">Work:</p>
+    <p id="break" class="label">Break:</p>
+
+    <div id="work-timer" class="timer">
+        <span id="p_minutes">1</span>
+        <span class="d-print-inline">:</span>
+        <span id="p_seconds">00</span>
+    </div>
+
+    <div id="break-timer" class="timer">
+        <span id="b_minutes">2</span>
+        <span style="display:inline">:</span>
+        <span id="b_seconds">00</span>
+    </div>
+</div>
+<div>
+    <form class="form-inline justify-content-center">
+        <div class="form-group">
+            <label>Type: </label>
+            <select class="form-control text-center" id="types" style="margin:5px">
+            </select>
+        </div>
+        <input type="button" class="btn btn-primary" id="addPomodoroType" value="+" />
+        <div class="modal fade" id="addPomodoroTypeModal" role="dialog" data-url='@Url.Action("AddPomodoroType", "Home")'></div>
+    </form>
+</div>
+<div>
+    <form class="form-inline justify-content-center"style="margin:5px">
+        <div class="form-group">
+            <label>Notes: </label>
+            <input type="text" class="form-control text-center"style="margin:5px" id="notes" placeholder="Enter note...">
+        </div>
+    </form>
+</div>
+<div style="text-align:center">
+    <button id="startBtn" class="btn btn-success">Start</button>
+    <button id="resetBtn" class="btn btn-danger" disabled>Cancel</button>
+</div>
+
+<script>
+    var settings;
+    var pomodoro;
+    var startTimer;
+    var user;
+
+    var buttons = {
+        StartButton: document.getElementById('startBtn'),
+        ResetButton: document.getElementById('resetBtn')
+    };
+
+    var pomodoroTimer = {
+        PomodoroMinutes: document.getElementById('p_minutes'),
+        PomodoroSeconds: document.getElementById('p_seconds')
+    };
+
+    var breakTimer = {
+        BreakMinutes: document.getElementById('b_minutes'),
+        BreakSeconds: document.getElementById('b_seconds')
+    };
+
+    $(document).ready(function () {
+        Pomodoro().GetUserById(1);
+        Pomodoro().GetUserPomodoroTypes(1);
+        Pomodoro().GetUserSettings(1, pomodoroTimer.PomodoroMinutes, breakTimer.BreakMinutes);
+    });
+
+    buttons.StartButton.addEventListener('click', function () {
+        if ($("#notes").val() == '') {
+            alert("Note is required!");
+            return;
+        }
+
+        if (startTimer === undefined) {
+            pomodoro = {
+                PomodoroDuration: settings.pomodoroDuration,
+                BreakDuration: settings.breakDuration,
+                Notes: $("#notes").val(),
+                PomodoroUserId: user.userId,
+                TypeId: parseInt($("#types").children(":selected").attr("id")),
+                PomodoroId: 0,
+            };
+
+            Pomodoro().CreateNewPomodoro(pomodoro);
+
+            startTimer = setInterval(timer, 1000);
+
+            buttons.StartButton.disabled = true;
+            buttons.ResetButton.disabled = false;
+        }
+    });
+
+    buttons.ResetButton.addEventListener('click', function () {
+        Pomodoro().StopInterval(startTimer);
+        Pomodoro().CancelPomodoro(pomodoro.PomodoroId);
+        SetDefaultValues();
+        startTimer = undefined;
+
+        buttons.StartButton.disabled = false;
+        buttons.ResetButton.disabled = true;
+        alert("Pomodoro canceled");
+    });
+
+    timer = function () {
+        if (pomodoroTimer.PomodoroSeconds.innerText != 0) {
+            pomodoroTimer.PomodoroSeconds.innerText--;
+        } else if (pomodoroTimer.PomodoroMinutes.innerText != 0 && pomodoroTimer.PomodoroSeconds.innerText == 0) {
+            pomodoroTimer.PomodoroSeconds.innerText = 59;
+            pomodoroTimer.PomodoroMinutes.innerText--;
+        }
+
+        if (pomodoroTimer.PomodoroMinutes.innerText == 0 && pomodoroTimer.PomodoroSeconds.innerText == 0) {
+            if (breakTimer.BreakSeconds.innerText != 0) {
+                breakTimer.BreakSeconds.innerText--;
+            } else if (breakTimer.BreakMinutes.innerText != 0 && breakTimer.BreakSeconds.innerText == 0) {
+                breakTimer.BreakSeconds.innerText = 59;
+                breakTimer.BreakMinutes.innerText--;
+            }
+        }
+
+        if (pomodoroTimer.PomodoroMinutes.innerText == 0 && pomodoroTimer.PomodoroSeconds.innerText == 0 && breakTimer.BreakMinutes.innerText == 0 && breakTimer.BreakSeconds.innerText == 0) {
+            Pomodoro().StopInterval(startTimer);
+            Pomodoro().CompletePomodoro(pomodoro.PomodoroId);
+            buttons.ResetButton.disabled = true;
+            buttons.StartButton.disabled = false;
+            SetDefaultValues();
+            alert("Pomodoro finished!");
+        }
+    }
+
+    $('#showSettings').click(function () {
+        var url = $('#settingsModal').data('url');
+        $.get(url, function (data) {
+            $("#settingsModal").html(data);
+            $("#settingsModal").modal('show');
+        });
+    });
+
+    $('#addPomodoroType').click(function () {
+        var url = $('#addPomodoroTypeModal').data('url');
+        $.get(url, function (data) {
+            $("#addPomodoroTypeModal").html(data);
+            $("#addPomodoroTypeModal").modal('show');
+        });
+    });
+
+    $('#showHistory').click(function () {
+        var url = $('#historyModal').data('url');
+        $.get(url, function (data) {
+            $("#historyModal").html(data);
+            $("#historyModal").modal('show');
+        });
+    });
+
+    $('#showStatistics').click(function () {
+        var url = $('#statisticsModal').data('url');
+        $.get(url, function (data) {
+            $("#statisticsModal").html(data);
+            $("#statisticsModal").modal('show');
+        });
+    });
+
+    function SetDefaultValues() {
+        pomodoroTimer.PomodoroMinutes.innerText = settings.pomodoroDuration;
+        pomodoroTimer.PomodoroSeconds.innerText = "00";
+
+        breakTimer.BreakMinutes.innerText = settings.breakDuration;
+        breakTimer.BreakSeconds.innerText = "00";
+    }
+</script>
